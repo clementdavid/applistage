@@ -1,0 +1,382 @@
+	 var dataString = "";
+	 
+	 $(document).ready(function() {		 
+		 // var url = 'http://tim/stages/PresentationStage/recherche-proxy.asp?_dc=1491211964711&command=getListeStat&format=JSON&typestage=0&ch_globale=&ch_domaine=&datedebut=&start=20&limit=30';
+		 // command: "getListeStat" dédié au PDR
+		 //
+		 // format: "JSON", possible XML
+		 //
+		 // Pagination :
+		 // start: integer premier enregistrement à observer (0 par défaut)
+		 // limit: integer nombre d'enregistrements à retourner
+		 //
+		 // typestage: integer, critère de recherche (0 par défaut pour tous les types), voir référentiel
+		 // ch_globale: chaîne de filtre (vide en l'absence de critère). La recherche stricte porte sur le nom de l'entreprise, la description du stage, les activités de l'entreprise. (, les nom et prénom de l'étudiant, fonctionnalité à retirer)
+		 // ch_domaine: recherche sur les domaines d'activité de l'entreprise
+		 // datedebut: ne retourne que les résultats des stages ayant débuté après cette date
+		 if(window.location.href.indexOf("oapi") > -1) {
+			var url = '/data/stagesPR.json';
+		 }
+		 else if (window.location.href.indexOf("isic") > -1) {
+			 var url = '/data/stagesISIC.json';
+		 }
+		 $.ajax({
+
+		   // The 'type' property sets the HTTP method.
+		   // A value of 'PUT' or 'DELETE' will trigger a preflight request.
+		   type: 'GET',
+
+		   // The URL to make the request to.
+		   url: url,
+
+		   // The 'contentType' property sets the 'Content-Type' header.
+		   // The JQuery default for this property is
+		   // 'application/x-www-form-urlencoded; charset=UTF-8', which does not trigger
+		   // a preflight. If you set this value to anything other than
+		   // application/x-www-form-urlencoded, multipart/form-data, or text/plain,
+		   // you will trigger a preflight request.
+		   contentType: 'application/json',
+
+		   xhrFields: {
+		     // The 'xhrFields' property sets additional fields on the XMLHttpRequest.
+		     // This can be used to set the 'withCredentials' property.
+		     // Set the value to 'true' if you'd like to pass cookies to the server.
+		     // If this is enabled, your server must respond with the header
+		     // 'Access-Control-Allow-Credentials: true'.
+		     withCredentials: false
+		   },
+
+		   headers: {
+		     // Set any custom headers here.
+		     // If you set any non-simple headers, your server must include these
+		     // headers in the 'Access-Control-Allow-Headers' response header.
+		   },
+
+		   success: function(presentation) {
+			   graph(calculVal(presentation));
+			   geo(presentation);
+		     // Here's where you handle a successful response.
+				//console.log(stagesDataArray);
+				/*displayTableHeadInto($('#stagesTable thead'),Object.keys(stagesDataArray.Presentations[0]));
+				
+	  			$.each(stagesDataArray.Presentations, function(k,s) {
+		 			appendStageDataInto($('#stagesTable tbody'),s);
+	  			});
+				$('#stagesDiv').css('display','block');
+				$('#imgSpin').css('display','none');*/
+		   },
+
+		   error: function() {
+		     // Here's where you handle an error response.
+		     // Note that if the error was due to a CORS issue,
+		     // this function will still fire, but there won't be any additional
+		     // information about the error.
+			 
+				
+		   }
+		 });
+ 
+		  // var stagesDataArray = stagesData();
+		  //
+		  //
+		  // displayTableHeadInto($('#stagesDataDiv table thead'), stagesDataArray[0]);
+		  //
+		  //  		  var $tableElement = $('#stagesDataDiv table tbody');
+		  //
+		  //  		  $.each(stagesDataArray, function(index,stage){
+		  //  				var htmlText = '<tr>';
+		  //  				htmlText += '<td>'+ index +'</td>';
+		  //  				$.each(stage, function( index, value ) {
+		  //  					htmlText += '<td>'+ value +'</td>';
+		  //  				});
+		  //  				htmlText += '</tr>';
+		  //  				$tableElement.append(htmlText);
+		  //  		  });
+  		  
+	 /*});
+
+
+$(function graph() {*/
+	
+	
+function graph(tabRes){
+		
+	   var browsersChart = Morris.Donut({
+        element: 'morris-donut-chart-oapi',
+        data: [{
+            label: "TPE",
+            value: tabRes[1][0]
+        }, {
+            label: "Petite Entreprise",
+            value: tabRes[1][1]
+        }, {
+            label: "Moyenne Entreprise",
+            value: tabRes[1][2]
+        }, {
+			label: "Entreprise Taille intermédiaire",
+			value: tabRes[1][3]
+		}, {
+			label: "Grande Entreprise",
+			value: tabRes[1][4]
+		}, {
+			label: "Administration/Public",
+			value: tabRes[1][5]
+		}],
+        resize: true,
+		colors: ['#f82831', '#5245ce', '#66c88f', '#ffde56', '#f4953b', '#191e35', '#9bd5e0'],
+    });
+	    
+	    browsersChart.options.data.forEach(function(label, i) {
+    var legendItem = $('<span></span>').text( label['label'] + " ( " +label['value'] + " )" ).prepend('<br><span>&nbsp;</span>');
+    legendItem.find('span')
+      .css('backgroundColor', browsersChart.options.colors[i])
+      .css('width', '20px')
+      .css('display', 'inline-block')
+      .css('margin', '5px');
+    $('#legend').append(legendItem)
+  });
+	
+	   var browsersChart2 = Morris.Donut({
+        element: 'morris-donut-chart-2-oapi',
+        data: [{
+            label: "Productique",
+            value: 50
+        }, {
+            label: "Automatisme",
+            value: 46
+        }, {
+            label: "Lean Management",
+            value: 12
+        }],
+        resize: true,
+		colors: ['#f82831', '#5245ce', '#66c88f', '#ffde56', '#f4953b', '#191e35', '#9bd5e0'],
+    });
+
+	   browsersChart2.options.data.forEach(function(label, i) {
+    var legendItem = $('<span></span>').text( label['label'] + " ( " +label['value'] + " )" ).prepend('<br><span>&nbsp;</span>');
+    legendItem.find('span')
+      .css('backgroundColor', browsersChart2.options.colors[i])
+      .css('width', '20px')
+      .css('display', 'inline-block')
+      .css('margin', '5px');
+    $('#legend2').append(legendItem)
+  });
+	
+		var browsersChart3 = Morris.Donut({
+			colors: ['#f82831', '#5245ce', '#66c88f', '#ffde56', '#f4953b', '#191e35', '#9bd5e0', '#00f9ff', '#ead9d5', '#5b6c7f'],
+			element: 'morris-donut-chart-3-oapi',
+			data: [{
+				label: "Exploitation des ressources naturelles",
+				value: tabRes[2][0]
+			}, {
+				label: "Ind. Mécaniques-Matériaux",
+				value: tabRes[2][1]
+			}, {
+				label: "Production-Distribution Energie",
+				value: tabRes[2][2]
+			}, {
+				label: "Transports-construction",
+				value: tabRes[2][3]
+			}, {
+				label: "Transports-exploitation",
+				value: tabRes[2][4]
+			}, {
+				label: "Batiments-Travaux publics",
+				value: tabRes[2][5]
+			}, {
+				label: "Ind. chimiques-pharmaceutiques",
+				value: tabRes[2][6]
+			}, {
+				label: "Ind. agro-alimentaires",
+				value: tabRes[2][7]
+			}, {
+				label: "Services",
+				value: tabRes[2][8]
+			}, {
+				label: "Industries diverses",
+				value: tabRes[2][9]
+			}],
+        resize: true
+    });
+		browsersChart3.options.data.forEach(function(label, i) {
+    var legendItem = $('<span></span>').text( label['label'] + " ( " +label['value'] + " )" ).prepend('<br><span>&nbsp;</span>');
+    legendItem.find('span')
+      .css('backgroundColor', browsersChart3.options.colors[i])
+      .css('width', '20px')
+      .css('display', 'inline-block')
+      .css('margin', '5px');
+    $('#legend3').append(legendItem)
+  });
+	
+	   Morris.Bar({
+        element: 'morris-bar-chart-oapi',
+        data: [{
+            y: 'NR',
+            a: tabRes[0][0],
+            //b: 90
+        }, {
+            y: 'NC',
+            a: tabRes[0][1],
+            //b: 65
+        }, {
+            y: '<500 €',
+            a: tabRes[0][2],
+            //b: 40
+        }, {
+            y: '<1000 €',
+            a: tabRes[0][3],
+            //b: 65
+        }, {
+            y: '1000+ €',
+            a: tabRes[0][4],
+            //b: 65
+        }],
+        xkey: 'y',
+        ykeys: ['a'/*, 'b'*/],
+        labels: ['Nombre de stage', 'Series B'],
+        hideHover: 'auto',
+        resize: true,
+		barColors:['#f82831']
+    });
+}
+});
+
+
+function calculVal(presentation){
+// tabRes[0] = remuneration, tabRes[1] = statut, tabRes[2] = act
+	var year = "201120122013";
+	var tabRes = [];
+	var tabRem = [0,0,0,0,0,];
+	var tabStatut = [0,0,0,0,0,0];
+	var tabAct = [0,0,0,0,0,0,0,0,0,0];	
+	for (i in presentation.Presentations) {
+		year = (presentation.Presentations[i].date_debut.substr(6, 4));
+		
+		if (window.location.href.includes(year) || ((window.location.href.indexOf("20") == -1))){
+		
+		//********** REMUNERATION *******************
+		
+			if (presentation.Presentations[i].remuneration == "NR") {
+				tabRem[0] +=1;
+			}
+			if (presentation.Presentations[i].remuneration == "NC") {
+				tabRem[1] +=1;
+			}
+			if (presentation.Presentations[i].remuneration == "<500") {
+				tabRem[2] +=1;
+			}
+			if (presentation.Presentations[i].remuneration == "<1000") {
+				tabRem[3] +=1;
+			}
+			if (presentation.Presentations[i].remuneration == "1000+") {
+				tabRem[4] +=1;
+			}
+			
+			
+			//*************** ACTIVITE *********************
+			
+			if (presentation.Presentations[i].CA1_code == '50' || presentation.Presentations[i].CA1_code == '52' || presentation.Presentations[i].CA1_code == '1' || presentation.Presentations[i].CA1_code == '9' || presentation.Presentations[i].CA1_code == '48' || presentation.Presentations[i].CA1_code == '43' ){
+				tabAct[0] +=1;
+			}
+			if (presentation.Presentations[i].CA1_code == '10' || presentation.Presentations[i].CA1_code == '22' || presentation.Presentations[i].CA1_code == '12' || presentation.Presentations[i].CA1_code == '53'){
+				tabAct[1] +=1;
+			}		
+			if (presentation.Presentations[i].CA1_code == '4'){
+				tabAct[2] +=1;
+			}	
+			if (presentation.Presentations[i].CA1_code == '31' || presentation.Presentations[i].CA1_code == '32'|| presentation.Presentations[i].CA1_code == '33'){
+				tabAct[3] +=1;
+			}
+			if (presentation.Presentations[i].CA1_code == '70' || presentation.Presentations[i].CA1_code == '75'){
+				tabAct[4] +=1;
+			}		
+			if (presentation.Presentations[i].CA1_code == '55'){
+				tabAct[5] +=1;
+			}
+			if (presentation.Presentations[i].CA1_code == '17'){
+				tabAct[6] +=1;
+			}
+			if (presentation.Presentations[i].CA1_code == '35'){
+				tabAct[7] +=1;
+			}
+			if (presentation.Presentations[i].CA1_code == '76' || presentation.Presentations[i].CA1_code == '77' || presentation.Presentations[i].CA1_code == '88' || presentation.Presentations[i].CA1_code == '90'|| presentation.Presentations[i].CA1_code == '84'|| presentation.Presentations[i].CA1_code == '57'|| presentation.Presentations[i].CA1_code == '62'|| presentation.Presentations[i].CA1_code == '69'|| presentation.Presentations[i].CA1_code == '56'|| presentation.Presentations[i].CA1_code == '82'){
+				tabAct[8] +=1;
+			}
+			if (presentation.Presentations[i].CA1_code == '26' || presentation.Presentations[i].CA1_code == '28' || presentation.Presentations[i].CA1_code == '54'){
+				tabAct[9] +=1;
+			}
+			
+			
+			
+			//********************STATUT ************************
+			
+			if (presentation.Presentations[i].statut == '6'){
+				tabStatut[0] += 1;
+			}
+			if (presentation.Presentations[i].statut == '7'){
+				tabStatut[1] += 1;
+			}
+			if (presentation.Presentations[i].statut == '1'){
+				tabStatut[2] += 1;
+			}
+			if (presentation.Presentations[i].statut == '8'){
+				tabStatut[3] += 1;
+			}
+			if (presentation.Presentations[i].statut == '2'){
+				tabStatut[4] += 1;
+			}
+			if (presentation.Presentations[i].statut == '3' || presentation.Presentations[i].statut == '4'){
+				tabStatut[5] += 1;
+			}
+			
+		}
+		}
+	tabRes[0] = tabRem;
+	tabRes[1] = tabStatut;
+	tabRes[2] = tabAct;
+	return tabRes;
+};
+
+
+
+
+function geo(presentation){
+	dataString ="[\n['City'],\n";
+		for (i in presentation.Presentations) {
+			year = (presentation.Presentations[i].date_debut.substr(6, 4));
+		
+		if (window.location.href.includes(year) || ((window.location.href.indexOf("20") == -1))){
+			dataString +='["';
+			dataString += presentation.Presentations[i].ville_ent;
+			dataString +='"],\n';
+		}
+		}
+	dataString +="['']\n]";
+	//console.log(dataString);
+	//drawMarkersMap(dataString);
+
+}
+	google.charts.load('current', {'packages': ['geochart']});
+   google.charts.setOnLoadCallback(drawMarkersMap);		
+
+
+      function drawMarkersMap() {
+      var data = google.visualization.arrayToDataTable(eval(dataString));
+
+      var options = {
+        //region: 'FR',
+        displayMode: 'markers',
+        colorAxis: {colors: ['#e7711c', '#4374e0']},
+		enableRegionInteractivity: true,
+		sizeAxis: { minValue: 0, maxValue: 100 },
+		backgroundColor: '#81d4fa',
+        datalessRegionColor: '#f5f5f5f5',
+        defaultColor: '#f82831'
+      };
+
+      var chart = new google.visualization.GeoChart(document.getElementById('chart_div'));
+      chart.draw(data, options);
+    };
+			
+
+			
